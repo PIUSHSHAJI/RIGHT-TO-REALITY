@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RIGHT-TO-REALITY — Sample Verification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 860px;
+      margin: 32px auto;
+      padding: 0 16px;
+      line-height: 1.5;
+      color: #1f2937;
+    }
+    .card {
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      background: #ffffff;
+    }
+    .status-ok {
+      background: #eff6ff;
+      border-left: 4px solid #2563eb;
+    }
+    .status-err {
+      background: #fef2f2;
+      border-left: 4px solid #dc2626;
+    }
+    .match {
+      background: #ecfdf5;
+      border-left: 4px solid #059669;
+      padding: 12px 14px;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    .nomatch {
+      background: #fffbeb;
+      border-left: 4px solid #d97706;
+      padding: 12px 14px;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    code {
+      word-break: break-all;
+      font-size: 0.9em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.92em;
+    }
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    th {
+      background: #f9fafb;
+    }
+    button {
+      padding: 6px 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>RIGHT-TO-REALITY — Sample Demo</h1>
+  <p>Register an image to record its SHA-256 hash in MySQL, or upload an image to check for an exact hash match.</p>
+
+  {% if message %}
+    <div class="card status-ok">
+      <strong>Status:</strong> {{ message }}
+    </div>
+  {% endif %}
+
+  {% if error %}
+    <div class="card status-err">
+      <strong>Error:</strong> {{ error }}
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <h2>1. Register Image</h2>
+    <form action="/register" method="POST" enctype="multipart/form-data">
+      <input type="file" name="image" accept="image/*" required />
+      <button type="submit">Register Image</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>2. Verify Image</h2>
+    <form action="/verify" method="POST" enctype="multipart/form-data">
+      <input type="file" name="image" accept="image/*" required />
+      <button type="submit">Verify Image</button>
+    </form>
+  </div>
+
+  {% if verification_result %}
+    <div class="card">
+      <h2>Verification Result</h2>
+      <p><strong>Checked File:</strong> {{ verification_result.checked_filename }}</p>
+      <p><strong>SHA-256 Hash:</strong> <code>{{ verification_result.sha256_hash }}</code></p>
+
+      {% if verification_result.matches %}
+        <div class="match">
+          <strong>Exact Match Found ({{ verification_result.matches | length }} record(s))</strong>
+          <ul>
+            {% for row in verification_result.matches %}
+              <li>
+                Record #{{ row.id }} — <strong>{{ row.filename }}</strong>
+                (Registered: {{ row.registered_at }})
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% else %}
+        <div class="nomatch">
+          <strong>No Exact Match Found</strong>
+          <p>No registered record has this exact SHA-256 hash. Any bit-level change—such as resizing, cropping, re-compression, or editing—produces a different SHA-256 digest.</p>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <h2>Recent Registered Records</h2>
+    {% if records %}
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Filename</th>
+            <th>SHA-256 Hash</th>
+            <th>Registered At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in records %}
+            <tr>
+              <td>{{ row.id }}</td>
+              <td>{{ row.filename }}</td>
+              <td><code>{{ row.sha256_hash }}</code></td>
+              <td>{{ row.registered_at }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No images registered yet.</p>
+    {% endif %}
+  </div>
+</body>
+</html>
